@@ -1,0 +1,118 @@
+mariam zaki 320210342
+
+
+
+
+
+using System;
+using System.IO;
+using System.ServiceProcess;
+using System.Timers;
+using System.Diagnostics;
+using System.Net;
+using System.Net.Mail;
+
+namespace PCWorkloadService
+{
+    public partial class PCWorkloadService : ServiceBase
+    {
+        private Timer _timer;
+        private string _logFilePath;
+        private string _emailRecipient;
+
+        public PCWorkloadService()
+        {
+            InitializeComponent();
+
+            // Set the timer to trigger every 12 hours
+            _timer = new Timer(43200000); // 12 hours in milliseconds
+
+            // Specify the function to call when the timer triggers
+            _timer.Elapsed += new ElapsedEventHandler(OnTimerElapsed);
+
+            // Get the log file path and email recipient from the app.config file
+            _logFilePath = System.Configuration.ConfigurationManager.AppSettings["LogFilePath"];
+            _emailRecipient = System.Configuration.ConfigurationManager.AppSettings["EmailRecipient"];
+        }
+
+        protected override void OnStart(string[] args)
+        {
+            // Start the timer when the service starts
+            _timer.Start();
+        }
+
+        protected override void OnStop()
+        {
+            // Stop the timer when the service stops
+            _timer.Stop();
+        }
+
+        private void OnTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            // Get the current date and time
+            DateTime now = DateTime.Now;
+
+            // Construct a string with the current date and time
+            string timestamp = now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            // Get the CPU usage as a percentage
+            float cpuUsage = GetCPUUsage();
+
+            // Get the memory usage as a percentage
+            float memoryUsage = GetMemoryUsage();
+
+            // Get the HDD usage as a percentage
+            float hddUsage = GetHDDUsage();
+
+            // Get the network usage as a percentage
+            float networkUsage = GetNetworkUsage();
+
+            // Construct a string with the workload data
+            string workloadData = $"{timestamp},{cpuUsage},{memoryUsage},{hddUsage},{networkUsage}";
+
+            // Write the workload data to the log file
+            using (StreamWriter writer = new StreamWriter(_logFilePath, true))
+            {
+                writer.WriteLine(workloadData);
+            }
+
+            // Check if it's time to send an email (every 12 hours)
+            if (now.Hour % 12 == 0 && now.Minute == 0 && now.Second == 0)
+            {
+                // Send an email with the log file attached
+                SendEmail();
+            }
+        }
+
+        private float GetCPUUsage()
+        {
+            // Get the current process's CPU usage as a percentage
+            return (float)Process.GetCurrentProcess().TotalProcessorTime.Ticks / (float)DateTime.Now.Ticks * 100f;
+        }
+
+        private float GetMemoryUsage()
+        {
+            // Get the current process's working set size in bytes
+            long workingSetBytes = Process.GetCurrentProcess().WorkingSet64;
+
+            // Get the total physical memory size in bytes
+            long totalPhysicalMemoryBytes = new Microsoft.VisualBasic.Devices.ComputerInfo().TotalPhysicalMemory;
+
+            // Calculate the memory usage as a percentage
+            return (float)workingSetBytes / (float)totalPhysicalMemoryBytes * 100f;
+        }
+
+        private float GetHDDUsage()
+        {
+            // Get the current drive's available free space in bytes
+            long freeSpaceBytes = new DriveInfo(Path.GetPathRoot(Environment.SystemDirectory)).AvailableFreeSpace;
+
+            // Get the total drive size in bytes
+
+
+
+
+
+
+
+
